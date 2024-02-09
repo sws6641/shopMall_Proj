@@ -3,14 +3,17 @@ package com.example.demo.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+
+import static org.springframework.security.config.Customizer.withDefaults;
+import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -26,28 +29,23 @@ public class WebSecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http)
             throws Exception {
-//        http.cors();
-//        http.csrf().disable();
-        http.cors(Customizer.withDefaults());
-        http.csrf(Customizer.withDefaults());
+
+        http.cors(withDefaults());
+        http.csrf(AbstractHttpConfigurer::disable);
 
         http.addFilterBefore(
                 authenticationFilter, BasicAuthenticationFilter.class);
 
-//        http.authorizeHttpRequests()
-//                .requestMatchers(HttpMethod.POST, "/session").permitAll()
-//                .requestMatchers(HttpMethod.POST, "/users").permitAll()
-//                .requestMatchers(HttpMethod.GET, "/categories").permitAll()
-//                .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
-//                .requestMatchers(HttpMethod.GET, "/backdoor/**").permitAll()
-//                .anyRequest().authenticated();
-
-        http.authorizeHttpRequests(authorizeRequest -> authorizeRequest
-                .requestMatchers(HttpMethod.GET, "/login**", "/web-resources/**", "/actuator/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/admin/**").hasAnyRole("ADMIN")
-                .requestMatchers(HttpMethod.GET, "/order/**").hasAnyRole("USER")
-                .anyRequest().authenticated()
+        http.authorizeHttpRequests((authorizeHttpRequests) ->
+                authorizeHttpRequests
+                        .requestMatchers(antMatcher(HttpMethod.POST, "/session")).permitAll()
+                        .requestMatchers(antMatcher(HttpMethod.POST, "/users")).permitAll()
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/categories")).permitAll()
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/products/**")).permitAll()
+                        .requestMatchers(antMatcher(HttpMethod.GET, "/backdoor/**")).permitAll()
+                        .anyRequest().authenticated()
         );
+
 
         return http.build();
     }
